@@ -9,13 +9,20 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# DB dependency
-def get_db():
-    db = SessionLocal()
+@app.on_event("startup")
+def startup():
     try:
-        yield db
-    finally:
-        db.close()
+        models.Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print("DB connection failed:", e)
+
+# DB dependency
+# def get_db():
+#     db = SessionLocal()
+#     try:
+#         yield db
+#     finally:
+#         db.close()
 
 
 # -------------------------
