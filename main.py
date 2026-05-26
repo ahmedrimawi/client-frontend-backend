@@ -29,6 +29,10 @@ class FormRequest(BaseModel):
 # Login API
 # -------------------------
 
+@app.get("/") 
+def root(): 
+    return {"message": "API working"}
+
 @app.post("/login")
 def login(data: LoginRequest):
 
