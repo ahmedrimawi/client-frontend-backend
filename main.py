@@ -9,6 +9,15 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+# DB dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 # -------------------------
 # Request Models
 # -------------------------
@@ -29,30 +38,52 @@ class FormRequest(BaseModel):
 # Login API
 # -------------------------
 
-@app.get("/") 
-def root(): 
-    return {"message": "API working"}
-
 @app.post("/login")
-def login(data: LoginRequest):
+def login(data: LoginRequest, db: Session = Depends(get_db)):
 
-    db: Session = SessionLocal()
+    try:
+        user = db.query(models.User).filter(
+            models.User.email == data.email
+        ).first()
 
-    user = db.query(models.User).filter(
-        models.User.email == data.email,
-        models.User.hashed_password == data.password
-    ).first()
+        if not user:
+            return {"success": False, "message": "User not found"}
 
-    if user:
+        # TEMP FIX (until you add hashing)
+        if user.hashed_password != data.password:
+            return {"success": False, "message": "Invalid credentials"}
+
         return {
             "success": True,
             "message": "Login successful"
         }
 
-    return {
-        "success": False,
-        "message": "Invalid credentials"
-    }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": str(e)
+        }
+
+# @app.post("/login")
+# def login(data: LoginRequest):
+
+#     db: Session = SessionLocal()
+
+#     user = db.query(models.User).filter(
+#         models.User.email == data.email,
+#         models.User.hashed_password == data.password
+#     ).first()
+
+#     if user:
+#         return {
+#             "success": True,
+#             "message": "Login successful"
+#         }
+
+#     return {
+#         "success": False,
+#         "message": "Invalid credentials"
+#     }
 
 
 # -------------------------
