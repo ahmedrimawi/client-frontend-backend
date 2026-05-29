@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 #DATABASE_URL = "postgresql://uruk:123456@localhost/client_dashboard"
-DATABASE_URL = "postgresql://postgres:!39QHA&U-*/qPPf@db.ypyryqegoarpdeztpddy.supabase.co:5432/postgres"
+#DATABASE_URL = "postgresql://postgres:!39QHA&U-*/qPPf@db.ypyryqegoarpdeztpddy.supabase.co:5432/postgres"
 #DATABASE_URL = "postgresql://postgres:!39QHA&U-*/qPPf@db.ypyryqegoarpdeztpddy.supabase.co:5432/postgres"
 
 DATABASE_URL = os.getenv("DATABASE_URL")
