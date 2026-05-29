@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -9,20 +9,20 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-@app.on_event("startup")
-def startup():
-    try:
-        models.Base.metadata.create_all(bind=engine)
-    except Exception as e:
-        print("DB connection failed:", e)
-
-# DB dependency
-# def get_db():
-#     db = SessionLocal()
+# @app.on_event("startup")
+# def startup():
 #     try:
-#         yield db
-#     finally:
-#         db.close()
+#         models.Base.metadata.create_all(bind=engine)
+#     except Exception as e:
+#         print("DB connection failed:", e)
+
+#DB dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 # -------------------------
@@ -48,28 +48,21 @@ class FormRequest(BaseModel):
 @app.post("/login")
 def login(data: LoginRequest, db: Session = Depends(get_db)):
 
-    try:
-        user = db.query(models.User).filter(
-            models.User.email == data.email
-        ).first()
+    user = db.query(models.User).filter(
+        models.User.email == data.email,
+        models.User.hashed_password == data.password
+    ).first()
 
-        if not user:
-            return {"success": False, "message": "User not found"}
-
-        # TEMP FIX (until you add hashing)
-        if user.hashed_password != data.password:
-            return {"success": False, "message": "Invalid credentials"}
-
+    if user:
         return {
             "success": True,
             "message": "Login successful"
         }
 
-    except Exception as e:
-        return {
-            "success": False,
-            "message": str(e)
-        }
+    return {
+        "success": False,
+        "message": "Invalid credentials"
+    }
 
 # @app.post("/login")
 # def login(data: LoginRequest):
