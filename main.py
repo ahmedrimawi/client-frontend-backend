@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -9,18 +9,13 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+
 @app.get("/")
 def root():
     return {"message": "API is running"}
 
-# @app.on_event("startup")
-# def startup():
-#     try:
-#         models.Base.metadata.create_all(bind=engine)
-#     except Exception as e:
-#         print("DB connection failed:", e)
 
-#DB dependency
+# DB Dependency
 def get_db():
     db = SessionLocal()
     try:
@@ -29,10 +24,7 @@ def get_db():
         db.close()
 
 
-# -------------------------
 # Request Models
-# -------------------------
-
 class LoginRequest(BaseModel):
     email: str
     password: str
@@ -45,93 +37,74 @@ class FormRequest(BaseModel):
     department: str
 
 
-# -------------------------
-# Login API
-# -------------------------
-
+# LOGIN API
 @app.post("/login")
 def login(data: LoginRequest, db: Session = Depends(get_db)):
 
-    user = db.query(models.User).filter(
-        models.User.email == data.email,
-        models.User.hashed_password == data.password
-    ).first()
+    try:
+        user = db.query(models.User).filter(
+            models.User.email == data.email,
+            models.User.password == data.password
+        ).first()
 
-    if user:
+        if user:
+            return {
+                "success": True,
+                "message": "Login successful"
+            }
+
         return {
-            "success": True,
-            "message": "Login successful"
+            "success": False,
+            "message": "Invalid credentials"
         }
 
-    return {
-        "success": False,
-        "message": "Invalid credentials"
-    }
-
-# @app.post("/login")
-# def login(data: LoginRequest):
-
-#     db: Session = SessionLocal()
-
-#     user = db.query(models.User).filter(
-#         models.User.email == data.email,
-#         models.User.hashed_password == data.password
-#     ).first()
-
-#     if user:
-#         return {
-#             "success": True,
-#             "message": "Login successful"
-#         }
-
-#     return {
-#         "success": False,
-#         "message": "Invalid credentials"
-#     }
+    except Exception as e:
+        print("LOGIN ERROR:", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-# -------------------------
-# Submit Form API
-# -------------------------
-
+# SUBMIT FORM API
 @app.post("/submit-form")
-def submit_form(data: FormRequest):
+def submit_form(data: FormRequest, db: Session = Depends(get_db)):
 
-    db: Session = SessionLocal()
+    try:
+        form = models.FormData(
+            name=data.name,
+            age=data.age,
+            salary=data.salary,
+            department=data.department
+        )
 
-    form = models.FormData(
-        name=data.name,
-        age=data.age,
-        salary=data.salary,
-        department=data.department
-    )
+        db.add(form)
+        db.commit()
 
-    db.add(form)
-    db.commit()
+        return {
+            "success": True,
+            "message": "Data saved"
+        }
 
-    return {
-        "success": True,
-        "message": "Data saved"
-    }
+    except Exception as e:
+        print("FORM ERROR:", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-# -------------------------
-# Chart Data API
-# -------------------------
-
+# CHART DATA API
 @app.get("/chart-data")
-def chart_data():
+def chart_data(db: Session = Depends(get_db)):
 
-    db: Session = SessionLocal()
+    try:
+        data = db.query(models.FormData).all()
 
-    data = db.query(models.FormData).all()
+        result = []
 
-    result = []
+        for item in data:
+            result.append({
+                "name": item.name,
+                "salary": float(item.salary)
+            })
 
-    for item in data:
-        result.append({
-            "name": item.name,
-            "salary": float(item.salary)
-        })
+        return result
 
-    return result
+    except Exception as e:
+        print("CHART ERROR:", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
