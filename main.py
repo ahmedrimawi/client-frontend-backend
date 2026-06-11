@@ -4,6 +4,10 @@ from sqlalchemy.orm import Session
 
 from database import SessionLocal, engine
 import models
+import secrets
+import string
+
+from datetime import datetime
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -35,6 +39,16 @@ class FormRequest(BaseModel):
     age: int
     salary: float
     department: str
+    
+class CreateUserRequest(BaseModel):
+    full_name: str
+    email: str
+    role: str
+
+# Generate Random Password
+def generate_password(length=10):
+    chars = string.ascii_letters + string.digits + "!@#$%"
+    return ''.join(secrets.choice(chars) for _ in range(length))
 
 
 # LOGIN API
@@ -48,9 +62,21 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
         ).first()
 
         if user:
+            user.status_id = 2 
+            user.last_login = datetime.utcnow()
+            db.commit()
+
             return {
                 "success": True,
-                "message": "Login successful"
+                "message": "Login successful",
+                "user": {
+                    "id": user.id,
+                    "full_name": user.full_name,
+                    "email": user.email,
+                    "role": user.role_id,
+                    "status_id": user.status_id,
+                    "last_login": user.last_login
+                }
             }
 
         return {
@@ -62,6 +88,45 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
         print("LOGIN ERROR:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
+# Generate User API
+@app.post("/users")
+def create_user(
+    data: CreateUserRequest,
+    db: Session = Depends(get_db)
+):
+
+    existing_user = db.query(models.User).filter(
+        models.User.email == data.email
+    ).first()
+
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already exists"
+        )
+
+    random_password = generate_password()
+
+    new_user = models.User(
+        full_name=data.full_name,
+        email=data.email,
+        password=random_password,
+        role=data.role,
+        status="Inactive",
+        created_on=datetime.utcnow(),
+        last_login=None
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return {
+        "success": True,
+        "message": "User created successfully",
+        "user_id": new_user.id,
+        "generated_password": random_password
+    }
 
 # SUBMIT FORM API
 @app.post("/submit-form")
