@@ -18,11 +18,26 @@ class User(Base):
 
     role_id = Column(Integer, nullable=False)
 
-    status_id = Column(Integer, default="Active")
+    status_id = Column(Integer, default=1)
 
     created_on = Column(DateTime, default=datetime.utcnow)
 
     last_login = Column(DateTime, nullable=True)
+
+
+class UserStatus(Base):
+
+    __tablename__ = "user_statuses"
+
+    id = Column(Integer, primary_key=True)
+    status_name = Column(String)
+
+class Roles(Base):
+
+    __tablename__ = "roles"
+
+    id = Column(Integer, primary_key=True)
+    role_name = Column(String)
 
 
 class FormData(Base):

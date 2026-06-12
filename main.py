@@ -43,7 +43,7 @@ class FormRequest(BaseModel):
 class CreateUserRequest(BaseModel):
     full_name: str
     email: str
-    role: str
+    role_id: int
 
 # Generate Random Password
 def generate_password(length=10):
@@ -65,6 +65,15 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
             user.status_id = 2 
             user.last_login = datetime.utcnow()
             db.commit()
+            db.refresh(user)
+
+            role = db.query(models.Roles).filter(
+                models.Roles.id == user.role_id
+            ).first()
+
+            status = db.query(models.UserStatus).filter(
+                models.UserStatus.id == user.status_id
+            ).first()
 
             return {
                 "success": True,
@@ -74,7 +83,9 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
                     "full_name": user.full_name,
                     "email": user.email,
                     "role": user.role_id,
+                    "role_name": role.role_name if role else None,
                     "status_id": user.status_id,
+                    "status_name": status.status_name if status else None,
                     "last_login": user.last_login
                 }
             }
@@ -111,8 +122,8 @@ def create_user(
         full_name=data.full_name,
         email=data.email,
         password=random_password,
-        role=data.role,
-        status="Inactive",
+        role=data.role_id,
+        status_id=1,
         created_on=datetime.utcnow(),
         last_login=None
     )
