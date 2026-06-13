@@ -98,6 +98,45 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
     except Exception as e:
         print("LOGIN ERROR:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.get("/users")
+def get_users(db: Session = Depends(get_db)):
+    try:
+        users = db.query(models.User).all()
+
+        result = []
+
+        for user in users:
+            role = db.query(models.Roles).filter(
+                models.Roles.id == user.role_id
+            ).first()
+
+            status = db.query(models.UserStatus).filter(
+                models.UserStatus.id == user.status_id
+            ).first()
+
+            result.append({
+                "id": user.id,
+                "full_name": user.full_name,
+                "email": user.email,
+                "role_id": user.role_id,
+                "role_name": role.role_name if role else None,
+                "status_id": user.status_id,
+                "status_name": status.status_name if status else None,
+                "created_on": user.created_at,
+                "last_login": user.last_login
+            })
+
+        return {
+            "success": True,
+            "count": len(result),
+            "users": result
+        }
+
+    except Exception as e:
+        print("GET USERS ERROR:", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Generate User API
 @app.post("/users")
