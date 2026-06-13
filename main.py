@@ -124,7 +124,7 @@ def create_user(
         password=random_password,
         role_id=data.role_id,
         status_id=1,
-        created_on=datetime.utcnow(),
+        created_at=datetime.utcnow(),
         last_login=None
     )
 

@@ -20,7 +20,7 @@ class User(Base):
 
     status_id = Column(Integer, default=1)
 
-    created_on = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     last_login = Column(DateTime, nullable=True)
 
