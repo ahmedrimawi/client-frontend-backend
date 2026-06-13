@@ -82,7 +82,7 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
                     "id": user.id,
                     "full_name": user.full_name,
                     "email": user.email,
-                    "role": user.role_id,
+                    "role_id": user.role_id,
                     "role_name": role.role_name if role else None,
                     "status_id": user.status_id,
                     "status_name": status.status_name if status else None,
@@ -122,7 +122,7 @@ def create_user(
         full_name=data.full_name,
         email=data.email,
         password=random_password,
-        role=data.role_id,
+        role_id=data.role_id,
         status_id=1,
         created_on=datetime.utcnow(),
         last_login=None
