@@ -99,13 +99,16 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
         print("LOGIN ERROR:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
     
-
+# List Users API
 @app.get("/users")
 def get_users(db: Session = Depends(get_db)):
     try:
         users = db.query(models.User).all()
 
         result = []
+
+        active_count = 0
+        inactive_count = 0
 
         for user in users:
             role = db.query(models.Roles).filter(
@@ -115,6 +118,11 @@ def get_users(db: Session = Depends(get_db)):
             status = db.query(models.UserStatus).filter(
                 models.UserStatus.id == user.status_id
             ).first()
+
+            if user.status_id == 2:
+                active_count += 1
+            elif user.status_id == 1:
+                inactive_count += 1
 
             result.append({
                 "id": user.id,
@@ -130,7 +138,9 @@ def get_users(db: Session = Depends(get_db)):
 
         return {
             "success": True,
-            "count": len(result),
+            "total_users": len(result),
+            "active_users": active_count,
+            "inactive_users": inactive_count,
             "users": result
         }
 
