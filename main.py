@@ -188,6 +188,30 @@ def create_user(
         "generated_password": random_password
     }
 
+# List User Roles API
+@app.get("/roles")
+def get_user_roles(db: Session = Depends(get_db)):
+    try:
+        roles = db.query(models.Roles).all()
+
+        result = []
+
+        for role in roles:
+            result.append({
+                "id": role.id,
+                "role_name": role.role_name,
+            })
+
+        return {
+            "success": True,
+            "total_roles": len(result),
+            "roles": result
+        }
+
+    except Exception as e:
+        print("GET USERS ERROR:", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
 # SUBMIT FORM API
 @app.post("/submit-form")
 def submit_form(data: FormRequest, db: Session = Depends(get_db)):
